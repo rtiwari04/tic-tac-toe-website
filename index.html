@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Tic Tac Toe | Rakesh Tiwari</title>
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f2027;
+    color: white;
+    text-align: center;
+    overflow-x: hidden;
+}
+
+#particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.container {
+    padding-top: 40px;
+}
+
+.top-controls button {
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    font-size: 18px;
+    margin: 15px 0;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 8px;
+    justify-content: center;
+    margin: 20px auto;
+}
+
+.cell {
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.cell:hover {
+    transform: scale(1.05);
+}
+
+.cell.win {
+    background: #00adb5;
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 10px #00adb5; }
+    to { box-shadow: 0 0 25px #00fff2; }
+}
+
+button {
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+@media (max-width: 500px) {
+    .board {
+        grid-template-columns: repeat(3, 80px);
+    }
+    .cell {
+        width: 80px;
+        height: 80px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="particles-js"></div>
+
+<div class="container">
+    <h1>🎮 Advanced Tic Tac Toe</h1>
+
+    <div class="top-controls">
+        <button onclick="setMode('player')">👥 2 Player</button>
+        <button onclick="setMode('ai')">🤖 vs AI</button>
+        <button onclick="resetScores()">🔄 Reset Score</button>
+    </div>
+
+    <div class="scoreboard">
+        <div>X Score: <span id="xScore">0</span></div>
+        <div>O Score: <span id="oScore">0</span></div>
+    </div>
+
+    <div class="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <h2 id="status">Player X's Turn</h2>
+    <button onclick="restartGame()">Restart Game</button>
+</div>
+
+<audio id="clickSound" src="https://www.soundjay.com/button/button-16.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/human/applause-8.mp3"></audio>
+
+<script>
+particlesJS("particles-js", {
+  particles: {
+    number: { value: 80 },
+    size: { value: 3 },
+    color: { value: "#00adb5" },
+    line_linked: { enable: true, color: "#00adb5" },
+    move: { speed: 2 }
+  }
+});
+
+const cells = document.querySelectorAll(".cell");
+const statusText = document.getElementById("status");
+const xScoreText = document.getElementById("xScore");
+const oScoreText = document.getElementById("oScore");
+const clickSound = document.getElementById("clickSound");
+const winSound = document.getElementById("winSound");
+
+let currentPlayer = "X";
+let gameActive = true;
+let gameMode = "player";
+let gameState = ["","","","","","","","",""];
+
+let xScore = localStorage.getItem("xScore") || 0;
+let oScore = localStorage.getItem("oScore") || 0;
+
+xScoreText.textContent = xScore;
+oScoreText.textContent = oScore;
+
+const winningConditions = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+];
+
+cells.forEach(cell => cell.addEventListener("click", handleClick));
+
+function handleClick(e) {
+    const index = e.target.dataset.index;
+    if (gameState[index] !== "" || !gameActive) return;
+
+    makeMove(index, currentPlayer);
+
+    if (gameMode === "ai" && gameActive && currentPlayer === "O") {
+        setTimeout(aiMove, 500);
+    }
+}
+
+function makeMove(index, player) {
+    gameState[index] = player;
+    cells[index].textContent = player;
+    clickSound.play();
+    checkWinner();
+}
+
+function aiMove() {
+    let emptyCells = gameState
+        .map((val, index) => val === "" ? index : null)
+        .filter(val => val !== null);
+
+    let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    makeMove(randomIndex, "O");
+}
+
+function checkWinner() {
+    for (let condition of winningConditions) {
+        const [a,b,c] = condition;
+
+        if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+
+            cells[a].classList.add("win");
+            cells[b].classList.add("win");
+            cells[c].classList.add("win");
+
+            statusText.textContent = `Player ${currentPlayer} Wins!`;
+            winSound.play();
+            gameActive = false;
+
+            if (currentPlayer === "X") {
+                xScore++;
+                localStorage.setItem("xScore", xScore);
+                xScoreText.textContent = xScore;
+            } else {
+                oScore++;
+                localStorage.setItem("oScore", oScore);
+                oScoreText.textContent = oScore;
+            }
+            return;
+        }
+    }
+
+    if (!gameState.includes("")) {
+        statusText.textContent = "Game Draw!";
+        gameActive = false;
+        return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusText.textContent = `Player ${currentPlayer}'s Turn`;
+}
+
+function restartGame() {
+    gameState = ["","","","","","","","",""];
+    cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("win");
+    });
+    currentPlayer = "X";
+    gameActive = true;
+    statusText.textContent = "Player X's Turn";
+}
+
+function setMode(mode) {
+    gameMode = mode;
+    restartGame();
+}
+
+function resetScores() {
+    xScore = 0;
+    oScore = 0;
+    localStorage.setItem("xScore", 0);
+    localStorage.setItem("oScore", 0);
+    xScoreText.textContent = 0;
+    oScoreText.textContent = 0;
+}
+</script>
+
+</body>
+</html>
